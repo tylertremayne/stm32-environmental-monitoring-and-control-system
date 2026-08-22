@@ -1,4 +1,18 @@
-# stm32-environmental-control-system
-STM32-based embedded environmental monitoring and fan control system using sensors, PWM, I2C, UART, and timer-driven firmware.
+# STM32 Environmental Monitoring and Control System
 
-An embedded environmental monitoring and control system built around the STM32F401RE. The project measures environmental conditions, displays live sensor data, controls a DC fan using PWM, and transmits telemetry over UART. The system will use hardware timers, ADC, I2C, and interrupt-driven firmware as development progresses.
+An embedded environmental monitoring and fan control system built around the STM32F401RE.
+
+## Planned Features
+- Temperature sensing
+- Ambient light sensing
+- OLED display
+- PWM-controlled DC fan
+- UART telemetry
+- Timer-driven sensor sampling
+- Automatic and manual control modes
+
+## Hardware
+- STM32 Nucleo-F401RE
+
+## Status
+Project setup
