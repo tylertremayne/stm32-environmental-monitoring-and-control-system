@@ -2,7 +2,7 @@
 
 An embedded environmental monitoring and fan control system built around the STM32F401RE.
 
-## Planned Features
+### Planned Features
 - Temperature sensing
 - Ambient light sensing
 - OLED display
