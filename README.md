@@ -15,4 +15,4 @@ An embedded environmental monitoring and fan control system built around the STM
 - STM32 Nucleo-F401RE
 
 ## Status
-Project setup
+-- Project setup
