@@ -1,0 +1,29 @@
+# Build output
+build/
+Debug/
+Release/
+
+# Compiled files
+*.o
+*.obj
+*.elf
+*.hex
+*.bin
+*.map
+*.d
+
+# Editor settings
+.vscode/
+.idea/
+
+# STM32CubeIDE workspace
+.metadata/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*~
