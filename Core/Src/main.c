@@ -98,9 +98,12 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	  HAL_Delay(500);
+
     /* USER CODE BEGIN 3 */
+	  char msg[] = "Hello from STM32!\r\n";
+
+	  HAL_UART_Transmit(&huart2, (uint8_t *)msg, sizeof(msg) - 1, HAL_MAX_DELAY);
+	  HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
