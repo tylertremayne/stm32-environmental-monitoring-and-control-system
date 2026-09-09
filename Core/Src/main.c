@@ -109,16 +109,47 @@ int main(void)
 	  char test[]= "loop started!\r\n";
 	  HAL_UART_Transmit(&huart2, (uint8_t *)test, sizeof(test) - 1, HAL_MAX_DELAY);
 
-	  uint32_t adc_value;
+	  uint32_t pot_raw;
+	  uint32_t temp_raw;
+
+	  float temp_voltage;
+	  float temperature_c;
+
 	  char msg[50];
 
 
+	  ADC_ChannelConfTypeDef sConfig = {0};
+
+	  sConfig.Channel = ADC_CHANNEL_0;
+	  sConfig.Rank = 1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	  pot_raw = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
 
-	  adc_value = HAL_ADC_GetValue(&hadc1);
+	  sConfig.Channel = ADC_CHANNEL_1;
+	  sConfig.Rank = 1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
-	  snprintf(msg, sizeof(msg), "ADC: %lu\r\n", adc_value);
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	  temp_raw = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
+
+	  temp_voltage = ((float)temp_raw / 4095.0f) * 3.3f;
+	  temperature_c = (temp_voltage - 0.5f) / 0.01f;
+
+	  snprintf(msg, sizeof(msg),
+	           "POT: %lu  TEMP: %d C\r\n",
+	           pot_raw, (int)temperature_c);
+
+	  snprintf(msg, sizeof(msg),
+	           "TEMP_RAW: %lu  TEMP: %d C\r\n",
+	           temp_raw, (int)temperature_c);
 
 	  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 
