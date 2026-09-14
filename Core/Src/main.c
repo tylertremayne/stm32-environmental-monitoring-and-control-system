@@ -106,14 +106,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  char test[]= "loop started!\r\n";
-	  HAL_UART_Transmit(&huart2, (uint8_t *)test, sizeof(test) - 1, HAL_MAX_DELAY);
-
 	  uint32_t pot_raw;
 	  uint32_t temp_raw;
 
 	  float temp_voltage;
 	  float temperature_c;
+	  float setpoint_c;
 
 	  char msg[50];
 
@@ -130,6 +128,8 @@ int main(void)
 	  pot_raw = HAL_ADC_GetValue(&hadc1);
 	  HAL_ADC_Stop(&hadc1);
 
+	  setpoint_c = 20.0f + ((float)pot_raw / 4095.0f) * 20.0f;
+
 	  sConfig.Channel = ADC_CHANNEL_1;
 	  sConfig.Rank = 1;
 	  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
@@ -143,18 +143,31 @@ int main(void)
 	  temp_voltage = ((float)temp_raw / 4095.0f) * 3.3f;
 	  temperature_c = (temp_voltage - 0.5f) / 0.01f;
 
-	  snprintf(msg, sizeof(msg),
-	           "POT: %lu  TEMP: %d C\r\n",
-	           pot_raw, (int)temperature_c);
+	    if (temperature_c > setpoint_c)
+	    {
+	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	    }
+	    else
+	    {
+	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	    }
 
-	  snprintf(msg, sizeof(msg),
-	           "TEMP_RAW: %lu  TEMP: %d C\r\n",
-	           temp_raw, (int)temperature_c);
+	    /* -------------------------
+	       UART telemetry
+	       ------------------------- */
+	    snprintf(msg, sizeof(msg),
+	             "TEMP: %d C  SET: %d C  FAN: %s\r\n",
+	             (int)temperature_c,
+	             (int)setpoint_c,
+	             (temperature_c > setpoint_c) ? "ON" : "OFF");
 
-	  HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+	    HAL_UART_Transmit(&huart2,
+	                      (uint8_t *)msg,
+	                      strlen(msg),
+	                      HAL_MAX_DELAY);
+
 
 	  HAL_Delay(500);
-
   }
   /* USER CODE END 3 */
 }
@@ -309,7 +322,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -317,12 +330,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : PA4 LD2_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
