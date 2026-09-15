@@ -1,0 +1,14 @@
+
+
+Component,Part Number,Quantity,Purpose,Power/Voltage,Status
+
+- STM32 Nucleo,NUCLEO-F401RE,1,Main microcontroller,USB/3.3V,Installed
+- Potentiometer,TBD,1,User temperature setpoint,3.3V,Installed
+- Temperature Sensor,TMP36GZ,1,Ambient temperature sensing,3.3V,Ordered
+- MOSFET Module,MTDELE 5V-36V 15A PWM Module,1,Fan switching/control,5V load side,Installed
+- Cooling Fan,3007 30x30x7mm Brushless Fan,1,Cooling load,5V,Installed
+- OLED Display,SSD1306 0.96in I2C 128x64,1,Local system display,3.3V logic,Ordered/Planned
+- External Power Supply,5V 3A regulated supply,1,Fan/MOSFET power,5V,Ordered
+- Breadboard,TBD,1,Prototype construction,N/A,Installed
+- Jumper Wires,TBD,Multiple,Electrical connections,N/A,Installed
+- Male Header Pins,0.1in pitch,1 set,MOSFET control header,N/A,Needs soldering
