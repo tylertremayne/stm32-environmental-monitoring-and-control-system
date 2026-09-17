@@ -102,72 +102,156 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+	  /* USER CODE BEGIN WHILE */
+      uint32_t pot_raw;
+      uint32_t temp_raw;
+      uint32_t pot_sum = 0;
+      uint32_t temp_sum = 0;
 
-    /* USER CODE BEGIN 3 */
-
-	  uint32_t pot_raw;
-	  uint32_t temp_raw;
-
-	  float temp_voltage;
-	  float temperature_c;
-	  float setpoint_c;
-
-	  char msg[50];
+      float temp_voltage;
+      float temperature_c;
+      float setpoint_c;
 
 
-	  ADC_ChannelConfTypeDef sConfig = {0};
+      // rejects bad temp readings
+      static float last_good_temp = 20.0f;
+      float measured_temp;
 
-	  sConfig.Channel = ADC_CHANNEL_0;
-	  sConfig.Rank = 1;
-	  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-	  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+      char msg[128];
 
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	  pot_raw = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
+      ADC_ChannelConfTypeDef sConfig = {0};
+      /* =========================
+         READ POTENTIOMETER - PA0
+         ========================= */
 
-	  setpoint_c = 20.0f + ((float)pot_raw / 4095.0f) * 20.0f;
+      sConfig.Channel = ADC_CHANNEL_0;
+      sConfig.Rank = 1;
+      sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
 
-	  sConfig.Channel = ADC_CHANNEL_1;
-	  sConfig.Rank = 1;
-	  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-	  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+      HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	  temp_raw = HAL_ADC_GetValue(&hadc1);
-	  HAL_ADC_Stop(&hadc1);
+      /* Throw away first conversion after switching channels */
+      HAL_ADC_Start(&hadc1);
+      HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+      HAL_ADC_GetValue(&hadc1);
+      HAL_ADC_Stop(&hadc1);
+      /* Average 8 real samples */
+      pot_sum = 0;
 
-	  temp_voltage = ((float)temp_raw / 4095.0f) * 3.3f;
-	  temperature_c = (temp_voltage - 0.5f) / 0.01f;
+      for (int i = 0; i < 8; i++)
+      {
+          HAL_ADC_Start(&hadc1);
+          HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 
-	    if (temperature_c > setpoint_c)
-	    {
-	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-	    }
-	    else
-	    {
-	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-	    }
+          pot_sum += HAL_ADC_GetValue(&hadc1);
 
-	    /* -------------------------
-	       UART telemetry
-	       ------------------------- */
-	    snprintf(msg, sizeof(msg),
-	             "TEMP: %d C  SET: %d C  FAN: %s\r\n",
-	             (int)temperature_c,
-	             (int)setpoint_c,
-	             (temperature_c > setpoint_c) ? "ON" : "OFF");
+          HAL_ADC_Stop(&hadc1);
+      }
 
-	    HAL_UART_Transmit(&huart2,
-	                      (uint8_t *)msg,
-	                      strlen(msg),
-	                      HAL_MAX_DELAY);
+      pot_raw = pot_sum / 8;
 
+      /* Map potentiometer to 20 C - 60 C */
+      setpoint_c =
+          18.0f +
+          ((float)pot_raw / 4095.0f) * 38.0f;
 
-	  HAL_Delay(500);
+      /* =========================
+         READ TMP36 - PA1
+         ========================= */
+
+      sConfig.Channel = ADC_CHANNEL_1;
+      sConfig.Rank = 1;
+      sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+
+      HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+      /* Throw away first conversion after switching channels */
+      HAL_ADC_Start(&hadc1);
+      HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+      HAL_ADC_GetValue(&hadc1);
+      HAL_ADC_Stop(&hadc1);
+
+      /* Average 16 temperature samples */
+      temp_sum = 0;
+
+      for (int i = 0; i < 16; i++)
+      {
+          HAL_ADC_Start(&hadc1);
+          HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+          temp_sum += HAL_ADC_GetValue(&hadc1);
+
+          HAL_ADC_Stop(&hadc1);
+      }
+
+      temp_raw = temp_sum / 16;
+
+      /* =========================
+         TEMPERATURE CALCULATION
+         ========================= */
+
+      temp_voltage =
+          ((float)temp_raw / 4095.0f) * 3.3f;
+
+      measured_temp =
+          ((temp_voltage - 0.5f) / 0.01f) + 20.0f; //offset by 4 degrees
+
+      /* Reject obviously bad readings */
+      if (measured_temp >= 0.0f && measured_temp <= 60.0f)
+      {
+          last_good_temp = measured_temp;
+      }
+
+      temperature_c = last_good_temp;
+
+      /* =========================
+         FAN CONTROL
+         ========================= */
+
+      if (temperature_c > setpoint_c)
+      {
+          HAL_GPIO_WritePin(
+              GPIOA,
+              GPIO_PIN_4,
+              GPIO_PIN_SET
+          );
+      }
+      else
+      {
+          HAL_GPIO_WritePin(
+              GPIOA,
+              GPIO_PIN_4,
+              GPIO_PIN_RESET
+          );
+      }
+
+      /* =========================
+         UART OUTPUT
+         ========================= */
+
+      snprintf(
+          msg,
+          sizeof(msg),
+          "RAW: %lu | VOLT: %d mV | TEMP: %d C | SET: %d C | FAN: %s\r\n",
+          temp_raw,
+          (int)(temp_voltage * 1000.0f),
+          (int)temperature_c,
+          (int)setpoint_c,
+          (temperature_c > setpoint_c) ? "ON" : "OFF"
+      );
+
+      HAL_UART_Transmit(
+          &huart2,
+          (uint8_t *)msg,
+          strlen(msg),
+          HAL_MAX_DELAY
+      );
+
+      HAL_Delay(500);
+
+      /* USER CODE END WHILE */
+
+      /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
