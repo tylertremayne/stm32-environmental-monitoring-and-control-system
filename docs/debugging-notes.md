@@ -21,9 +21,13 @@
 ## Temperature Sensor Debugging
 - Original MCP9700AE produced unrealistic and unstable readings.
 - Verified PA1 ADC path by tying A1 directly to ground; ADC correctly read near zero.
+<<<<<<< HEAD
 - Reconnecting the sensor caused abnormal readings again, confirming the issue was on the sensor side.
 - Sensor was later overheated during orientation troubleshooting and is being replaced.
 - Temporary solution to get a temperature in range was to offset calculated value by 20 degrees
+=======
+- New sensor is the TMP3600, reads 20 degrees below accurate temp. offset the read value by 20 degrees inside while(1)
+>>>>>>> be844c1a9cfa12a298c5ffda54abaf0339f41847
 
 ## Fan / MOSFET Debugging
 - MOSFET module arrived without the control header soldered.
