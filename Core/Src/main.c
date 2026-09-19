@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
+#include "ssd1306.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,6 +44,8 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+I2C_HandleTypeDef hi2c1;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -54,6 +57,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -94,7 +98,12 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+  SSD1306_Init(&hi2c1);
+  SSD1306_Clear();
+
+
 
   /* USER CODE END 2 */
 
@@ -208,37 +217,51 @@ int main(void)
          FAN CONTROL
          ========================= */
 
-      if (temperature_c > setpoint_c)
-      {
-          HAL_GPIO_WritePin(
-              GPIOA,
-              GPIO_PIN_4,
-              GPIO_PIN_SET
-          );
-      }
-      else
-      {
-          HAL_GPIO_WritePin(
-              GPIOA,
-              GPIO_PIN_4,
-              GPIO_PIN_RESET
-          );
-      }
+		  if (temperature_c > setpoint_c)
+		  {
+			  HAL_GPIO_WritePin(
+				  GPIOA,
+				  GPIO_PIN_4,
+				  GPIO_PIN_SET
+			  );
+		  }
+		  else
+		  {
+			  HAL_GPIO_WritePin(
+				  GPIOA,
+				  GPIO_PIN_4,
+				  GPIO_PIN_RESET
+			  );
+		  }
 
-      /* =========================
-         UART OUTPUT
-         ========================= */
+      /* =======================
+       * OLED OUTPUT
+       * =======================
+       */
 
-      snprintf(
-          msg,
-          sizeof(msg),
-          "RAW: %lu | VOLT: %d mV | TEMP: %d C | SET: %d C | FAN: %s\r\n",
-          temp_raw,
-          (int)(temp_voltage * 1000.0f),
-          (int)temperature_c,
-          (int)setpoint_c,
-          (temperature_c > setpoint_c) ? "ON" : "OFF"
-      );
+	  char temp_text[20];
+	  char set_text[20];
+	  char fan_text[20];
+
+	  snprintf(temp_text, sizeof(temp_text),
+			   "TEMP: %d C", (int)temperature_c);
+
+	  snprintf(set_text, sizeof(set_text),
+			   "SET: %d C", (int)setpoint_c);
+
+	  snprintf(fan_text, sizeof(fan_text),
+			   "FAN: %s",
+			   (temperature_c > setpoint_c) ? "ON" : "OFF");
+
+	  SSD1306_Clear();
+
+	  SSD1306_WriteString(0, 4,  temp_text);
+	  SSD1306_WriteString(0, 20, set_text);
+	  SSD1306_WriteString(0, 36, fan_text);
+
+	  SSD1306_UpdateScreen();
+
+
 
       HAL_UART_Transmit(
           &huart2,
@@ -247,11 +270,27 @@ int main(void)
           HAL_MAX_DELAY
       );
 
+      /* =========================
+         UART OUTPUT
+         ========================= */
+
+	  snprintf(
+		  msg,
+		  sizeof(msg),
+		  "RAW: %lu | VOLT: %d mV | TEMP: %d C | SET: %d C | FAN: %s\r\n",
+		  temp_raw,
+		  (int)(temp_voltage * 1000.0f),
+		  (int)temperature_c,
+		  (int)setpoint_c,
+		  (temperature_c > setpoint_c) ? "ON" : "OFF"
+	  );
+
+
       HAL_Delay(500);
 
-      /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-      /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -351,6 +390,40 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 

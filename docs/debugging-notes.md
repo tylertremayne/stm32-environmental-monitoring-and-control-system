@@ -23,6 +23,7 @@
 - Verified PA1 ADC path by tying A1 directly to ground; ADC correctly read near zero.
 - Reconnecting the sensor caused abnormal readings again, confirming the issue was on the sensor side.
 - Sensor was later overheated during orientation troubleshooting and is being replaced.
+- Temporary solution to get a temperature in range was to offset calculated value by 20 degrees
 
 ## Fan / MOSFET Debugging
 - MOSFET module arrived without the control header soldered.
