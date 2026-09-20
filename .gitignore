@@ -27,3 +27,6 @@ Thumbs.db
 *.tmp
 *.log
 *~
+
+# KiCad local history
+.history/
