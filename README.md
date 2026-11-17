@@ -16,4 +16,4 @@
 - STM32 Nucleo-F401RE
 
 ## Status
--- Project setup
+-- Project Completed
